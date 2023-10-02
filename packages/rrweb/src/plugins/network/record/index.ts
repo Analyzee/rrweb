@@ -388,72 +388,67 @@ function initFetchObserver(
       const after = win.performance.now();
 
       return originalFetch(url, init).then((response) => {
-        setTimeout(() => {
-          response
-            .clone()
-            .text()
-            .then((body) => {
-              const requestClone = new Request(url, init);
-              const networkRequest: Partial<NetworkRequest> = {};
-              const requestHeaders: Headers = {};
-              requestClone.headers.forEach((value, header) => {
-                requestHeaders[header] = value;
-              });
-              networkRequest.requestHeaders = requestHeaders;
-              if (
-                requestClone.body === undefined ||
-                requestClone.body === null
-              ) {
-                networkRequest.requestBody = null;
-              } else {
-                networkRequest.requestBody = requestClone.body;
-              }
-
-              const before = win.performance.now();
-              const status = response.status;
-              const responseHeaders: Headers = {};
-              response.headers.forEach((value, header) => {
-                responseHeaders[header] = value;
-              });
-
-              networkRequest.responseHeaders = responseHeaders;
-
-              if (body === undefined || body === null) {
-                networkRequest.responseBody = null;
-              } else {
-                networkRequest.responseBody = body;
-              }
-
-              getRequestPerformanceEntry(
-                win,
-                'fetch',
-                requestClone.url,
-                after,
-                before,
-              )
-                .then((entry) => {
-                  const request: NetworkRequest = {
-                    url: entry.name,
-                    method: requestClone.method,
-                    initiatorType: entry.initiatorType as InitiatorType,
-                    status,
-                    startTime: Math.round(entry.startTime),
-                    endTime: Math.round(entry.responseEnd),
-                    requestHeaders: networkRequest.requestHeaders,
-                    requestBody: networkRequest.requestBody,
-                    responseHeaders: networkRequest.responseHeaders,
-                    responseBody: networkRequest.responseBody,
-                  };
-                  cb({ requests: [request] });
-                })
-                .catch(() => {
-                  // ignore
-                });
-            })
-            .catch((error) => {
-              // ignore
+        response
+          .clone()
+          .text()
+          .then((body) => {
+            const requestClone = new Request(url, init);
+            const networkRequest: Partial<NetworkRequest> = {};
+            const requestHeaders: Headers = {};
+            requestClone.headers.forEach((value, header) => {
+              requestHeaders[header] = value;
             });
-        });
+            networkRequest.requestHeaders = requestHeaders;
+            if (requestClone.body === undefined || requestClone.body === null) {
+              networkRequest.requestBody = null;
+            } else {
+              networkRequest.requestBody = requestClone.body;
+            }
+
+            const before = win.performance.now();
+            const status = response.status;
+            const responseHeaders: Headers = {};
+            response.headers.forEach((value, header) => {
+              responseHeaders[header] = value;
+            });
+
+            networkRequest.responseHeaders = responseHeaders;
+
+            if (body === undefined || body === null) {
+              networkRequest.responseBody = null;
+            } else {
+              networkRequest.responseBody = body;
+            }
+
+            getRequestPerformanceEntry(
+              win,
+              'fetch',
+              requestClone.url,
+              after,
+              before,
+            )
+              .then((entry) => {
+                const request: NetworkRequest = {
+                  url: entry.name,
+                  method: requestClone.method,
+                  initiatorType: entry.initiatorType as InitiatorType,
+                  status,
+                  startTime: Math.round(entry.startTime),
+                  endTime: Math.round(entry.responseEnd),
+                  requestHeaders: networkRequest.requestHeaders,
+                  requestBody: networkRequest.requestBody,
+                  responseHeaders: networkRequest.responseHeaders,
+                  responseBody: networkRequest.responseBody,
+                };
+                cb({ requests: [request] });
+              })
+              .catch(() => {
+                // ignore
+              });
+          })
+          .catch((error) => {
+            // ignore
+          });
 
         return response;
 
