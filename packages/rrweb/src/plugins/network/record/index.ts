@@ -380,22 +380,6 @@ function initFetchObserver(
     ) {
       // return originalFetch(url);
 
-      return originalFetch(url, init).then((response) => {
-        console.log('GOT RESPONSE', response);
-
-        response
-          .clone()
-          .text()
-          .then((text) => {
-            console.log('response text', text);
-          })
-          .catch((error) => {
-            console.log('error while cloning', error);
-          });
-
-        return response;
-      });
-
       const req = new Request(url, init);
       let res: Response | undefined;
       const networkRequest: Partial<NetworkRequest> = {};
@@ -416,34 +400,17 @@ function initFetchObserver(
       const after = win.performance.now();
       let before: number | undefined;
 
-      return originalFetch(url, init)
-        .then(async (res) => {
-          before = win.performance.now();
-          const responseHeaders: Headers = {};
-          res.headers.forEach((value, header) => {
-            responseHeaders[header] = value;
-          });
-          if (recordResponseHeaders) {
-            networkRequest.responseHeaders = responseHeaders;
-          }
-          if (
-            shouldRecordBody('response', options.recordBody, responseHeaders)
-          ) {
-            let body: string | undefined;
-            try {
-              body = await res.clone().text();
-            } catch {
-              //
-            }
-            if (res.body === undefined || res.body === null) {
-              networkRequest.responseBody = null;
-            } else {
-              networkRequest.responseBody = body;
-            }
-          }
-          return res;
-        })
-        .finally(() => {
+      return originalFetch(url, init).then(async (res) => {
+        before = win.performance.now();
+        const responseHeaders: Headers = {};
+        res.headers.forEach((value, header) => {
+          responseHeaders[header] = value;
+        });
+        if (recordResponseHeaders) {
+          networkRequest.responseHeaders = responseHeaders;
+        }
+
+        function saveRequest() {
           getRequestPerformanceEntry(win, 'fetch', req.url, after, before)
             .then((entry) => {
               const request: NetworkRequest = {
@@ -463,7 +430,29 @@ function initFetchObserver(
             .catch(() => {
               //
             });
-        });
+        }
+        if (shouldRecordBody('response', options.recordBody, responseHeaders)) {
+          res
+            .clone()
+            .text()
+            .then((body) => {
+              if (body === undefined || body === null) {
+                networkRequest.responseBody = null;
+              } else {
+                networkRequest.responseBody = body;
+              }
+            })
+            .then(() => {
+              return saveRequest();
+            })
+            .catch((error) => {
+              // ignore
+            });
+        } else {
+          saveRequest();
+        }
+        return res;
+      });
     };
   });
   return () => {
