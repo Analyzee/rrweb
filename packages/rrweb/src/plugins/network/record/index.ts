@@ -382,6 +382,17 @@ function initFetchObserver(
 
       return originalFetch(url, init).then((response) => {
         console.log('GOT RESPONSE', response);
+
+        response
+          .clone()
+          .text()
+          .then((text) => {
+            console.log('response text', text);
+          })
+          .catch((error) => {
+            console.log('error while cloning', error);
+          });
+
         return response;
       });
 
