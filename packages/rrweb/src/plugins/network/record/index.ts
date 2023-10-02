@@ -380,79 +380,129 @@ function initFetchObserver(
     ) {
       // return originalFetch(url);
 
-      const req = new Request(url, init);
-      const networkRequest: Partial<NetworkRequest> = {};
-      let status: number;
-      const requestHeaders: Headers = {};
-      req.headers.forEach((value, header) => {
-        requestHeaders[header] = value;
-      });
-      if (recordRequestHeaders) {
-        networkRequest.requestHeaders = requestHeaders;
-      }
-      if (shouldRecordBody('request', options.recordBody, requestHeaders)) {
-        if (req.body === undefined || req.body === null) {
-          networkRequest.requestBody = null;
-        } else {
-          networkRequest.requestBody = req.body;
-        }
-      }
+      // return originalFetch(url, init).then((response) => {
+      //   response.clone().text().then(console.log)
+      //
+      //   return response;
+      // });
       const after = win.performance.now();
-      let before: number | undefined;
 
-      return originalFetch(url, init).then(async (res) => {
-        before = win.performance.now();
-        status = res.status;
-        const responseHeaders: Headers = {};
-        res.headers.forEach((value, header) => {
-          responseHeaders[header] = value;
-        });
-        if (recordResponseHeaders) {
-          networkRequest.responseHeaders = responseHeaders;
-        }
-
-        function saveRequest() {
-          getRequestPerformanceEntry(win, 'fetch', req.url, after, before)
-            .then((entry) => {
-              const request: NetworkRequest = {
-                url: entry.name,
-                method: req.method,
-                initiatorType: entry.initiatorType as InitiatorType,
-                status,
-                startTime: Math.round(entry.startTime),
-                endTime: Math.round(entry.responseEnd),
-                requestHeaders: networkRequest.requestHeaders,
-                requestBody: networkRequest.requestBody,
-                responseHeaders: networkRequest.responseHeaders,
-                responseBody: networkRequest.responseBody,
-              };
-              cb({ requests: [request] });
-            })
-            .catch(() => {
-              //
-            });
-        }
-        if (shouldRecordBody('response', options.recordBody, responseHeaders)) {
-          res
+      return originalFetch(url, init).then((response) => {
+        setTimeout(() => {
+          response
             .clone()
             .text()
             .then((body) => {
+              const requestClone = new Request(url, init);
+              const networkRequest: Partial<NetworkRequest> = {};
+              const requestHeaders: Headers = {};
+              requestClone.headers.forEach((value, header) => {
+                requestHeaders[header] = value;
+              });
+              networkRequest.requestHeaders = requestHeaders;
+              if (
+                requestClone.body === undefined ||
+                requestClone.body === null
+              ) {
+                networkRequest.requestBody = null;
+              } else {
+                networkRequest.requestBody = requestClone.body;
+              }
+
+              const responseClone = response.clone();
+              const before = win.performance.now();
+              const status = responseClone.status;
+              const responseHeaders: Headers = {};
+              responseClone.headers.forEach((value, header) => {
+                responseHeaders[header] = value;
+              });
+
+              networkRequest.responseHeaders = responseHeaders;
+
               if (body === undefined || body === null) {
                 networkRequest.responseBody = null;
               } else {
                 networkRequest.responseBody = body;
               }
-            })
-            .then(() => {
-              return saveRequest();
+
+              getRequestPerformanceEntry(
+                win,
+                'fetch',
+                requestClone.url,
+                after,
+                before,
+              )
+                .then((entry) => {
+                  const request: NetworkRequest = {
+                    url: entry.name,
+                    method: requestClone.method,
+                    initiatorType: entry.initiatorType as InitiatorType,
+                    status,
+                    startTime: Math.round(entry.startTime),
+                    endTime: Math.round(entry.responseEnd),
+                    requestHeaders: networkRequest.requestHeaders,
+                    requestBody: networkRequest.requestBody,
+                    responseHeaders: networkRequest.responseHeaders,
+                    responseBody: networkRequest.responseBody,
+                  };
+                  cb({ requests: [request] });
+                })
+                .catch(() => {
+                  // ignore
+                });
             })
             .catch((error) => {
               // ignore
             });
-        } else {
-          saveRequest();
-        }
-        return res;
+        });
+
+        return response;
+
+        // if (recordResponseHeaders) {
+        //   networkRequest.responseHeaders = responseHeaders;
+        // }
+
+        // function saveRequest() {
+        //   getRequestPerformanceEntry(win, 'fetch', req.url, after, before)
+        //     .then((entry) => {
+        //       const request: NetworkRequest = {
+        //         url: entry.name,
+        //         method: req.method,
+        //         initiatorType: entry.initiatorType as InitiatorType,
+        //         status,
+        //         startTime: Math.round(entry.startTime),
+        //         endTime: Math.round(entry.responseEnd),
+        //         requestHeaders: networkRequest.requestHeaders,
+        //         requestBody: networkRequest.requestBody,
+        //         responseHeaders: networkRequest.responseHeaders,
+        //         responseBody: networkRequest.responseBody,
+        //       };
+        //       cb({ requests: [request] });
+        //     })
+        //     .catch(() => {
+        //       //
+        //     });
+        // }
+
+        // if (shouldRecordBody('response', options.recordBody, responseHeaders)) {
+        //   response
+        //     .clone()
+        //     .text()
+        //     .then((body) => {
+        //       if (body === undefined || body === null) {
+        //         networkRequest.responseBody = null;
+        //       } else {
+        //         networkRequest.responseBody = body;
+        //       }
+        //
+        //       saveRequest();
+        //     })
+        //     .catch((error) => {
+        //       // ignore
+        //     });
+        // } else {
+        //   saveRequest();
+        // }
       });
     };
   });
