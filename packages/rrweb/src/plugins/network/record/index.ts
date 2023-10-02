@@ -380,6 +380,11 @@ function initFetchObserver(
     ) {
       // return originalFetch(url);
 
+      return originalFetch(url, init).then((response) => {
+        console.log('GOT RESPONSE', response);
+        return response;
+      });
+
       const req = new Request(url, init);
       let res: Response | undefined;
       const networkRequest: Partial<NetworkRequest> = {};
