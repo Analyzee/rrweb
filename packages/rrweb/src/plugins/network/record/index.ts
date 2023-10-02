@@ -381,8 +381,8 @@ function initFetchObserver(
       // return originalFetch(url);
 
       const req = new Request(url, init);
-      let res: Response | undefined;
       const networkRequest: Partial<NetworkRequest> = {};
+      let status: number;
       const requestHeaders: Headers = {};
       req.headers.forEach((value, header) => {
         requestHeaders[header] = value;
@@ -402,6 +402,7 @@ function initFetchObserver(
 
       return originalFetch(url, init).then(async (res) => {
         before = win.performance.now();
+        status = res.status;
         const responseHeaders: Headers = {};
         res.headers.forEach((value, header) => {
           responseHeaders[header] = value;
@@ -417,7 +418,7 @@ function initFetchObserver(
                 url: entry.name,
                 method: req.method,
                 initiatorType: entry.initiatorType as InitiatorType,
-                status: res?.status,
+                status,
                 startTime: Math.round(entry.startTime),
                 endTime: Math.round(entry.responseEnd),
                 requestHeaders: networkRequest.requestHeaders,
