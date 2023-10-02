@@ -409,11 +409,10 @@ function initFetchObserver(
                 networkRequest.requestBody = requestClone.body;
               }
 
-              const responseClone = response.clone();
               const before = win.performance.now();
-              const status = responseClone.status;
+              const status = response.status;
               const responseHeaders: Headers = {};
-              responseClone.headers.forEach((value, header) => {
+              response.headers.forEach((value, header) => {
                 responseHeaders[header] = value;
               });
 
