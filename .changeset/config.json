@@ -10,7 +10,6 @@
       "rrdom-nodejs",
       "rrweb-player",
       "@rrweb/types",
-      "@rrweb/web-extension",
       "rrvideo"
     ]
   ],
