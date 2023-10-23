@@ -22,6 +22,7 @@ export class Timer {
     this.actions = actions;
     this.speed = config.speed;
   }
+
   /**
    * Add an action, possibly after the timer starts.
    */
@@ -49,6 +50,24 @@ export class Timer {
     this.raf = requestAnimationFrame(this.rafCheck.bind(this));
   }
 
+  public clear() {
+    if (this.raf) {
+      if (this.raf !== true) {
+        cancelAnimationFrame(this.raf);
+      }
+      this.raf = null;
+    }
+    this.actions.length = 0;
+  }
+
+  public setSpeed(speed: number) {
+    this.speed = speed;
+  }
+
+  public isActive() {
+    return this.raf !== null;
+  }
+
   private rafCheck() {
     const time = performance.now();
     this.timeOffset += (time - this.lastTimestamp) * this.speed;
@@ -68,24 +87,6 @@ export class Timer {
     } else {
       this.raf = true; // was active
     }
-  }
-
-  public clear() {
-    if (this.raf) {
-      if (this.raf !== true) {
-        cancelAnimationFrame(this.raf);
-      }
-      this.raf = null;
-    }
-    this.actions.length = 0;
-  }
-
-  public setSpeed(speed: number) {
-    this.speed = speed;
-  }
-
-  public isActive() {
-    return this.raf !== null;
   }
 
   private findActionIndex(action: actionWithDelay): number {
